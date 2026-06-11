@@ -15,10 +15,16 @@
         }
         h2 { color: #333; margin-bottom: 20px; font-size: 24px; }
         
+        /* NOVO EMBRULHO: Necessário para sobrepor o texto no vídeo */
+        #scanner-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
         #reader { 
             width: 100%; 
-            max-width: 500px; 
-            margin: 0 auto; 
             border: none !important; 
             background: white;
             padding: 20px;
@@ -27,6 +33,39 @@
             box-sizing: border-box;
         }
 
+        /* --- MENSAGEM SOBREPOSTA NO VÍDEO --- */
+        #overlay-text {
+            position: absolute;
+            top: 40%; /* Posicionado um pouco acima do meio, dentro do quadrado de leitura */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+            font-weight: bold;
+            text-align: center;
+            width: 90%;
+            pointer-events: none; /* Garante que o texto não atrapalhe cliques na tela */
+            display: none;
+        }
+
+        /* Estilo para Leitura com Sucesso (Verde, sem fundo, com sombra) */
+        .sucesso-overlay {
+            color: #25d366; /* Verde bem vivo */
+            font-size: 3em;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.8), -2px -2px 5px rgba(0,0,0,0.8);
+        }
+
+        /* Estilo para Leitura Duplicada (Erro) */
+        .erro-overlay {
+            color: #dc3545;
+            font-size: 1.5em;
+            background: rgba(255, 255, 255, 0.95); /* Fundo branco levemente transparente para leitura fácil */
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+            text-shadow: none;
+        }
+
+        /* Estilização dos botões e menus mantida */
         #reader button {
             background-color: #0056b3; 
             color: white;
@@ -43,10 +82,7 @@
             text-transform: uppercase;
         }
 
-        #reader button:active {
-            background-color: #004085;
-            transform: scale(0.98); 
-        }
+        #reader button:active { background-color: #004085; transform: scale(0.98); }
 
         #reader select {
             width: 100%;
@@ -74,41 +110,24 @@
         }
 
         #reader a:active { background-color: #e2e6ea; }
-
-        #resultado { 
-            font-size: 1.5em; 
-            font-weight: bold; 
-            margin-top: 25px; 
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-            display: none; 
-            word-break: break-all;
-        }
-
-        /* Classes para mudar a cor do resultado (Sucesso x Erro) */
-        .sucesso { color: #28a745; border-left: 5px solid #28a745; }
-        .erro { color: #dc3545; border-left: 5px solid #dc3545; }
     </style>
 </head>
 <body>
 
     <h2>Controle de Entrada</h2>
-    <div id="reader"></div>
-    <p id="resultado"></p>
+    
+    <div id="scanner-wrapper">
+        <div id="reader"></div>
+        <div id="overlay-text"></div>
+    </div>
 
     <script>
         // --- SISTEMA DE MEMÓRIA DE LEITURA ---
-        // Pega a data de hoje para criar uma lista diária
         const dataHoje = new Date().toLocaleDateString('pt-BR');
         const nomeLista = 'codigos_lidos_' + dataHoje;
-        
-        // Carrega os códigos que já foram lidos hoje (ou cria uma lista vazia)
         let codigosLidosHoje = JSON.parse(localStorage.getItem(nomeLista)) || [];
 
         // --- SISTEMA DE ÁUDIO ---
-        // Bipe de sucesso (Agudo e rápido)
         function tocarBipSucesso() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -125,7 +144,6 @@
             } catch (e) {}
         }
 
-        // Bipe de erro (Grave e mais longo)
         function tocarBipErro() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -144,35 +162,38 @@
 
         // --- LÓGICA DO SCANNER ---
         let ultimoLido = "";
+        let timerEsconderTexto;
 
         function onScanSuccess(decodedText, decodedResult) {
-            // Trava rápida para a câmera não tentar ler o mesmo QR Code 50 vezes por segundo
             if (decodedText === ultimoLido) return;
             ultimoLido = decodedText;
-            setTimeout(() => { ultimoLido = ""; }, 2000); 
             
-            let caixaResultado = document.getElementById('resultado');
-            caixaResultado.style.display = "block";
+            let overlayTexto = document.getElementById('overlay-text');
+            overlayTexto.style.display = "block"; // Mostra o texto sobre o vídeo
+            
+            // Limpa qualquer timer anterior para não esconder o texto cedo demais
+            clearTimeout(timerEsconderTexto); 
 
-            // Verifica se a matrícula já está na lista de hoje
             if (codigosLidosHoje.includes(decodedText)) {
-                
+                // Cenário de Erro (Já lido)
                 tocarBipErro();
-                caixaResultado.className = "erro";
-                caixaResultado.innerText = "⚠️ Esse código já foi lido hoje! \n (" + decodedText + ")";
-                
+                overlayTexto.className = "erro-overlay";
+                overlayTexto.innerText = "⚠️ Esse código já foi lido hoje!\n(" + decodedText + ")";
             } else {
-                
-                // Se é um aluno novo, salva na memória do celular
+                // Cenário de Sucesso
                 codigosLidosHoje.push(decodedText);
                 localStorage.setItem(nomeLista, JSON.stringify(codigosLidosHoje));
 
                 tocarBipSucesso();
-                caixaResultado.className = "sucesso";
-                caixaResultado.innerText = "✅ Lido com sucesso: \n" + decodedText;
-                
-                // Futuramente: Código para enviar ao Google Apps Script entrará aqui!
+                overlayTexto.className = "sucesso-overlay";
+                overlayTexto.innerText = decodedText;
             }
+
+            // Faz o texto desaparecer e libera a trava após 2 segundos
+            timerEsconderTexto = setTimeout(() => { 
+                overlayTexto.style.display = "none";
+                ultimoLido = ""; 
+            }, 2000);
         }
 
         function onScanFailure(error) {
