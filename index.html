@@ -118,6 +118,11 @@
     
     <div id="scanner-wrapper">
         <div id="reader"></div>
+        <div style="text-align: center; margin-top: 30px;">
+    <button onclick="limparMemoriaHoje()" style="background-color: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 5px; font-size: 14px; cursor: pointer;">
+        🗑️ Zerar Memória de Hoje
+    </button>
+</div>
         <div id="overlay-text"></div>
     </div>
 
@@ -204,6 +209,14 @@
             "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
         
         html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        // Função para limpar a trava de segurança do dia
+function limparMemoriaHoje() {
+    if(confirm("Tem certeza que deseja zerar a memória do leitor? Todos poderão passar novamente hoje.")) {
+        localStorage.removeItem(nomeLista); // Apaga do armazenamento do celular
+        codigosLidosHoje = []; // Zera a lista ativa no código
+        alert("✅ Memória zerada com sucesso!");
+    }
+}
     </script>
 </body>
 </html>
