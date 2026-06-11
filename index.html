@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de Entrada</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+    <h2>Registro de Entrada</h2>
+    <div id="reader"></div>
+    <p id="resultado"></p>
+
+    <script>
+        function onScanSuccess(decodedText, decodedResult) {
+            // O que acontece quando o QR Code é lido com sucesso
+            document.getElementById('resultado').innerText = "Lido: " + decodedText;
+            
+            // Aqui entrará o código para enviar os dados para o Google Apps Script
+            // registrar a entrada e gerar a ocorrência no sistema de controle.
+        }
+
+        function onScanFailure(error) {
+            // Lida com erros de leitura (geralmente ignorado para não poluir a tela)
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 });
+        
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    </script>
+</body>
+</html>
