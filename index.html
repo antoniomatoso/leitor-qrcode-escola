@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leitor de Entrada</title>
+    
     <script src="https://unpkg.com/html5-qrcode"></script>
+    
     <style>
+        /* --- ESTILOS GERAIS --- */
         body { 
             font-family: sans-serif; 
             text-align: center; 
@@ -13,17 +16,48 @@
             background-color: #f0f2f5; 
             margin: 0;
         }
-        h2 { color: #333; margin-bottom: 20px; font-size: 24px; }
+        h2 { color: #333; margin-bottom: 15px; font-size: 24px; }
         
-        /* NOVO EMBRULHO: Necessário para sobrepor o texto no vídeo */
-        #scanner-wrapper {
-            position: relative;
+        /* --- SISTEMA DE ABAS --- */
+        .tabs-container {
+            display: flex;
+            max-width: 500px;
+            margin: 0 auto 15px auto;
+            background: #e4e6eb;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            background: none;
+            color: #555;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            background: white;
+            color: #0056b3;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- CONTAINERS PRINCIPAIS --- */
+        #scanner-container, #manual-container {
             width: 100%;
             max-width: 500px;
             margin: 0 auto;
         }
+        
+        #scanner-wrapper {
+            position: relative;
+            width: 100%;
+        }
 
-        #reader { 
+        #reader, .manual-card { 
             width: 100%; 
             border: none !important; 
             background: white;
@@ -33,40 +67,69 @@
             box-sizing: border-box;
         }
 
+        /* --- FORMULÁRIO MANUAL --- */
+        .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #444;
+        }
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background: #f8f9fa;
+        }
+        .form-control:focus {
+            border-color: #0056b3;
+            outline: none;
+            background: white;
+        }
+
+        .btn-enviar {
+            background-color: #28a745 !important; 
+            box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3) !important;
+        }
+
         /* --- MENSAGEM SOBREPOSTA NO VÍDEO --- */
         #overlay-text {
             position: absolute;
-            top: 40%; /* Posicionado um pouco acima do meio, dentro do quadrado de leitura */
+            top: 40%; 
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 999;
             font-weight: bold;
             text-align: center;
             width: 90%;
-            pointer-events: none; /* Garante que o texto não atrapalhe cliques na tela */
+            pointer-events: none; 
             display: none;
         }
 
-        /* Estilo para Leitura com Sucesso (Verde, sem fundo, com sombra) */
         .sucesso-overlay {
-            color: #25d366; /* Verde bem vivo */
-            font-size: 3em;
+            color: #25d366; 
+            font-size: 2.5em;
             text-shadow: 2px 2px 5px rgba(0,0,0,0.8), -2px -2px 5px rgba(0,0,0,0.8);
         }
 
-        /* Estilo para Leitura Duplicada (Erro) */
         .erro-overlay {
             color: #dc3545;
             font-size: 1.5em;
-            background: rgba(255, 255, 255, 0.95); /* Fundo branco levemente transparente para leitura fácil */
+            background: rgba(255, 255, 255, 0.95); 
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
             text-shadow: none;
         }
 
-        /* Estilização dos botões e menus mantida */
-        #reader button {
+        /* --- CUSTOMIZAÇÃO DOS BOTÕES DA BIBLIOTECA --- */
+        #reader button, .btn-geral {
             background-color: #0056b3; 
             color: white;
             border: none;
@@ -82,7 +145,7 @@
             text-transform: uppercase;
         }
 
-        #reader button:active { background-color: #004085; transform: scale(0.98); }
+        #reader button:active, .btn-geral:active { transform: scale(0.98); }
 
         #reader select {
             width: 100%;
@@ -92,7 +155,6 @@
             border-radius: 8px;
             margin-bottom: 15px;
             background-color: #fff;
-            color: #333;
             appearance: auto; 
         }
 
@@ -108,31 +170,80 @@
             border-radius: 8px;
             background-color: #f8f9fa;
         }
-
-        #reader a:active { background-color: #e2e6ea; }
     </style>
 </head>
 <body>
 
     <h2>Controle de Entrada</h2>
     
-    <div id="scanner-wrapper">
-        <div id="reader"></div>
-        <div style="text-align: center; margin-top: 30px;">
-    <button onclick="limparMemoriaHoje()" style="background-color: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 5px; font-size: 14px; cursor: pointer;">
-        🗑️ Zerar Memória de Hoje
-    </button>
-</div>
-        <div id="overlay-text"></div>
+    <div class="tabs-container">
+        <button class="tab-button active" onclick="mudarModo('camera')">📷 QR Code</button>
+        <button class="tab-button" onclick="mudarModo('manual')">✍️ Manual</button>
     </div>
 
+    <div id="scanner-container">
+        <div id="scanner-wrapper">
+            <div id="reader"></div>
+        </div>
+    </div>
+
+    <div id="manual-container" style="display: none;">
+        <div class="manual-card">
+            <div class="form-group">
+                <label for="txt-turma">Turma / Ano:</label>
+                <input type="text" id="txt-turma" class="form-control" placeholder="Ex: 7º Ano A, 1º EM">
+            </div>
+            <div class="form-group">
+                <label for="txt-aluno">Nome do Aluno:</label>
+                <input type="text" id="txt-aluno" class="form-control" placeholder="Digite o nome completo">
+            </div>
+            <button class="btn-geral btn-enviar" onclick="processarRegistroManual()">Registrar Entrada</button>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
+        <button onclick="limparMemoriaHoje()" style="background-color: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 5px; font-size: 14px; cursor: pointer;">
+            🗑️ Zerar Memória de Hoje
+        </button>
+    </div>
+
+    <div id="overlay-text"></div>
+
     <script>
-        // --- SISTEMA DE MEMÓRIA DE LEITURA ---
+        // ==========================================
+        // ATENÇÃO: COLE A URL DA SUA PLANILHA (APPS SCRIPT) AQUI:
+        const URL_SISTEMA = "SUA_URL_DO_WEB_APP_AQUI";
+        // ==========================================
+
         const dataHoje = new Date().toLocaleDateString('pt-BR');
         const nomeLista = 'codigos_lidos_' + dataHoje;
         let codigosLidosHoje = JSON.parse(localStorage.getItem(nomeLista)) || [];
 
-        // --- SISTEMA DE ÁUDIO ---
+        // Controle de alternar telas (Camera/Manual)
+        function mudarModo(modo) {
+            const btnCam = document.querySelectorAll('.tab-button')[0];
+            const btnMan = document.querySelectorAll('.tab-button')[1];
+            const divCam = document.getElementById('scanner-container');
+            const divMan = document.getElementById('manual-container');
+            const overlayTexto = document.getElementById('overlay-text');
+            
+            overlayTexto.style.display = "none"; 
+
+            if(modo === 'camera') {
+                btnCam.classList.add('active');
+                btnMan.classList.remove('active');
+                divCam.style.display = 'block';
+                divMan.style.display = 'none';
+            } else {
+                btnCam.classList.remove('active');
+                btnMan.classList.add('active');
+                divCam.style.display = 'none';
+                divMan.style.display = 'block';
+                document.getElementById('manual-container').appendChild(overlayTexto);
+            }
+        }
+
+        // Sistema de Áudio
         function tocarBipSucesso() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -165,58 +276,95 @@
             } catch (e) {}
         }
 
-        // --- LÓGICA DO SCANNER ---
+        // Limpar Trava Diária
+        function limparMemoriaHoje() {
+            if(confirm("Tem certeza que deseja zerar a memória do leitor? Todos poderão passar novamente hoje.")) {
+                localStorage.removeItem(nomeLista); 
+                codigosLidosHoje = []; 
+                alert("✅ Memória zerada com sucesso!");
+            }
+        }
+
         let ultimoLido = "";
         let timerEsconderTexto;
 
-        function onScanSuccess(decodedText, decodedResult) {
-            if (decodedText === ultimoLido) return;
-            ultimoLido = decodedText;
-            
+        // Função Central de Lógica de Registro
+        function executarFluxoRegistro(textoIdentificador, obterPorCamera) {
             let overlayTexto = document.getElementById('overlay-text');
-            overlayTexto.style.display = "block"; // Mostra o texto sobre o vídeo
             
-            // Limpa qualquer timer anterior para não esconder o texto cedo demais
+            if(obterPorCamera) {
+                document.getElementById('scanner-wrapper').appendChild(overlayTexto);
+            }
+            
+            overlayTexto.style.display = "block"; 
             clearTimeout(timerEsconderTexto); 
 
-            if (codigosLidosHoje.includes(decodedText)) {
-                // Cenário de Erro (Já lido)
+            // Checa Duplicidade
+            if (codigosLidosHoje.includes(textoIdentificador)) {
                 tocarBipErro();
                 overlayTexto.className = "erro-overlay";
-                overlayTexto.innerText = "⚠️ Esse código já foi lido hoje!\n(" + decodedText + ")";
+                overlayTexto.innerText = "⚠️ Esse código já foi lido hoje!\n(" + textoIdentificador + ")";
             } else {
-                // Cenário de Sucesso
-                codigosLidosHoje.push(decodedText);
+                // Sucesso
+                codigosLidosHoje.push(textoIdentificador);
                 localStorage.setItem(nomeLista, JSON.stringify(codigosLidosHoje));
 
                 tocarBipSucesso();
                 overlayTexto.className = "sucesso-overlay";
-                overlayTexto.innerText = decodedText;
+                overlayTexto.style.fontSize = textoIdentificador.length > 15 ? "1.5em" : "2.5em";
+                overlayTexto.innerText = obterPorCamera ? textoIdentificador : "✅ Entrada Registrada!";
+
+                // Disparo para o Google Planilhas
+                if (URL_SISTEMA && URL_SISTEMA !== "SUA_URL_DO_WEB_APP_AQUI") {
+                    fetch(URL_SISTEMA, {
+                        method: "POST",
+                        mode: "no-cors",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: "codigo=" + encodeURIComponent(textoIdentificador)
+                    }).catch(err => console.log("Erro ao enviar dados:", err));
+                }
             }
 
-            // Faz o texto desaparecer e libera a trava após 2 segundos
             timerEsconderTexto = setTimeout(() => { 
                 overlayTexto.style.display = "none";
                 ultimoLido = ""; 
-            }, 2000);
+            }, 2500);
         }
 
-        function onScanFailure(error) {
-            // Ignorado
+        // Leitura Câmera
+        function onScanSuccess(decodedText, decodedResult) {
+            if (decodedText === ultimoLido) return;
+            ultimoLido = decodedText;
+            executarFluxoRegistro(decodedText, true);
         }
 
+        // Leitura Manual
+        function processarRegistroManual() {
+            let campoTurma = document.getElementById('txt-turma');
+            let campoAluno = document.getElementById('txt-aluno');
+            
+            let turma = campoTurma.value.trim();
+            let aluno = campoAluno.value.trim();
+            
+            if (!turma || !aluno) {
+                alert("Por favor, preencha a turma e o nome do aluno!");
+                return;
+            }
+            
+            let identificadorManual = turma + " - " + aluno;
+            executarFluxoRegistro(identificadorManual, false);
+            
+            campoAluno.value = "";
+            campoAluno.focus();
+        }
+
+        function onScanFailure(error) { }
+
+        // Inicializa o Leitor
         let html5QrcodeScanner = new Html5QrcodeScanner(
             "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
         
         html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        // Função para limpar a trava de segurança do dia
-function limparMemoriaHoje() {
-    if(confirm("Tem certeza que deseja zerar a memória do leitor? Todos poderão passar novamente hoje.")) {
-        localStorage.removeItem(nomeLista); // Apaga do armazenamento do celular
-        codigosLidosHoje = []; // Zera a lista ativa no código
-        alert("✅ Memória zerada com sucesso!");
-    }
-}
     </script>
 </body>
 </html>
