@@ -212,7 +212,7 @@
     <script>
         // ==========================================
         // ATENÇÃO: COLE A URL DA SUA PLANILHA (APPS SCRIPT) AQUI:
-        const URL_SISTEMA = "https://script.google.com/macros/s/AKfycbzfCqz_ZQ-VceohZsbzu5lOA7n1xrfpHnD96VJGRlqKU_1Y8ZyBlxbru1kZHvh3UtdeVA/exec";
+        const URL_SISTEMA = "https://script.google.com/macros/s/AKfycby5AmiZGU3_5CpXZakNGBLTvroEaZUSgtbmkssJa37C7GqB7AASZ3zXloUKb_JSW2rZgQ/exec";
         // ==========================================
 
         const dataHoje = new Date().toLocaleDateString('pt-BR');
@@ -315,7 +315,7 @@
                 overlayTexto.innerText = obterPorCamera ? textoIdentificador : "✅ Entrada Registrada!";
 
                 // Disparo para o Google Planilhas
-                if (URL_SISTEMA && URL_SISTEMA !== "SUA_URL_DO_WEB_APP_AQUI") {
+                if (URL_SISTEMA && URL_SISTEMA !== "https://script.google.com/macros/s/AKfycby5AmiZGU3_5CpXZakNGBLTvroEaZUSgtbmkssJa37C7GqB7AASZ3zXloUKb_JSW2rZgQ/exec") {
                     fetch(URL_SISTEMA, {
                         method: "POST",
                         mode: "no-cors",
