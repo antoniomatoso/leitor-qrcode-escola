@@ -6,31 +6,151 @@
     <title>Leitor de Entrada</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #reader { width: 100%; max-width: 500px; margin: 0 auto; }
+        /* Estilos gerais do fundo e textos */
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            padding: 15px; 
+            background-color: #f0f2f5; 
+            margin: 0;
+        }
+        h2 { color: #333; margin-bottom: 20px; font-size: 24px; }
+        
+        /* Container principal do leitor */
+        #reader { 
+            width: 100%; 
+            max-width: 500px; 
+            margin: 0 auto; 
+            border: none !important; /* Remove a borda preta padrão */
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1); 
+            box-sizing: border-box;
+        }
+
+        /* --- MÁGICA VISUAL: CUSTOMIZANDO OS BOTÕES DA BIBLIOTECA --- */
+        
+        /* Botão "Start Scanning" / "Stop Scanning" */
+        #reader button {
+            background-color: #0056b3; /* Azul chamativo e profissional */
+            color: white;
+            border: none;
+            padding: 18px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            width: 100%; /* Ocupa a tela toda de ponta a ponta */
+            margin-top: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 86, 179, 0.3);
+            text-transform: uppercase;
+        }
+
+        #reader button:active {
+            background-color: #004085;
+            transform: scale(0.98); /* Efeito de afundar ao clicar */
+        }
+
+        /* Menu de seleção da câmera (Frontal/Traseira) */
+        #reader select {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            color: #333;
+            appearance: auto; /* Garante que a setinha do menu apareça */
+        }
+
+        /* Link "Scan an Image File" (Transformado em botão secundário) */
+        #reader a {
+            display: block;
+            padding: 15px 10px;
+            font-size: 16px;
+            color: #555;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+
+        #reader a:active { background-color: #e2e6ea; }
+
+        /* Caixa de Resultado */
+        #resultado { 
+            font-size: 1.8em; 
+            font-weight: bold; 
+            margin-top: 25px; 
+            color: #28a745; 
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+            display: none; /* Fica invisível até escanear algo */
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Registro de Entrada</h2>
+    <h2>Controle de Entrada</h2>
     <div id="reader"></div>
     <p id="resultado"></p>
 
     <script>
+        // Função para gerar o bip forte (Onda Quadrada)
+        function tocarBip() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = 'square'; 
+                oscillator.frequency.value = 800; 
+                
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {
+                console.log("Erro ao reproduzir o bip:", e);
+            }
+        }
+
+        let ultimoLido = "";
+
         function onScanSuccess(decodedText, decodedResult) {
-            // O que acontece quando o QR Code é lido com sucesso
-            document.getElementById('resultado').innerText = "Lido: " + decodedText;
-            
-            // Aqui entrará o código para enviar os dados para o Google Apps Script
-            // registrar a entrada e gerar a ocorrência no sistema de controle.
+            if (decodedText !== ultimoLido) {
+                ultimoLido = decodedText;
+                
+                tocarBip();
+                
+                // Exibe a caixa de resultado que estava invisível
+                let caixaResultado = document.getElementById('resultado');
+                caixaResultado.style.display = "block";
+                caixaResultado.innerText = "Lido: " + decodedText;
+                
+                setTimeout(() => { ultimoLido = ""; }, 2000);
+            }
         }
 
         function onScanFailure(error) {
-            // Lida com erros de leitura (geralmente ignorado para não poluir a tela)
+            // Ignorado
         }
 
+        // Configurações do Scanner
         let html5QrcodeScanner = new Html5QrcodeScanner(
-            "reader", { fps: 10, qrbox: 250 });
+            "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
         
         html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     </script>
