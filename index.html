@@ -6,7 +6,6 @@
     <title>Leitor de Entrada</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Estilos gerais do fundo e textos */
         body { 
             font-family: sans-serif; 
             text-align: center; 
@@ -16,12 +15,11 @@
         }
         h2 { color: #333; margin-bottom: 20px; font-size: 24px; }
         
-        /* Container principal do leitor */
         #reader { 
             width: 100%; 
             max-width: 500px; 
             margin: 0 auto; 
-            border: none !important; /* Remove a borda preta padrão */
+            border: none !important; 
             background: white;
             padding: 20px;
             border-radius: 12px;
@@ -29,18 +27,15 @@
             box-sizing: border-box;
         }
 
-        /* --- MÁGICA VISUAL: CUSTOMIZANDO OS BOTÕES DA BIBLIOTECA --- */
-        
-        /* Botão "Start Scanning" / "Stop Scanning" */
         #reader button {
-            background-color: #0056b3; /* Azul chamativo e profissional */
+            background-color: #0056b3; 
             color: white;
             border: none;
             padding: 18px 20px;
             font-size: 18px;
             font-weight: bold;
             border-radius: 8px;
-            width: 100%; /* Ocupa a tela toda de ponta a ponta */
+            width: 100%; 
             margin-top: 15px;
             margin-bottom: 10px;
             cursor: pointer;
@@ -50,10 +45,9 @@
 
         #reader button:active {
             background-color: #004085;
-            transform: scale(0.98); /* Efeito de afundar ao clicar */
+            transform: scale(0.98); 
         }
 
-        /* Menu de seleção da câmera (Frontal/Traseira) */
         #reader select {
             width: 100%;
             padding: 15px;
@@ -63,10 +57,9 @@
             margin-bottom: 15px;
             background-color: #fff;
             color: #333;
-            appearance: auto; /* Garante que a setinha do menu apareça */
+            appearance: auto; 
         }
 
-        /* Link "Scan an Image File" (Transformado em botão secundário) */
         #reader a {
             display: block;
             padding: 15px 10px;
@@ -82,19 +75,21 @@
 
         #reader a:active { background-color: #e2e6ea; }
 
-        /* Caixa de Resultado */
         #resultado { 
-            font-size: 1.8em; 
+            font-size: 1.5em; 
             font-weight: bold; 
             margin-top: 25px; 
-            color: #28a745; 
             padding: 15px;
             background: white;
             border-radius: 8px;
             box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-            display: none; /* Fica invisível até escanear algo */
+            display: none; 
             word-break: break-all;
         }
+
+        /* Classes para mudar a cor do resultado (Sucesso x Erro) */
+        .sucesso { color: #28a745; border-left: 5px solid #28a745; }
+        .erro { color: #dc3545; border-left: 5px solid #dc3545; }
     </style>
 </head>
 <body>
@@ -104,43 +99,79 @@
     <p id="resultado"></p>
 
     <script>
-        // Função para gerar o bip forte (Onda Quadrada)
-        function tocarBip() {
+        // --- SISTEMA DE MEMÓRIA DE LEITURA ---
+        // Pega a data de hoje para criar uma lista diária
+        const dataHoje = new Date().toLocaleDateString('pt-BR');
+        const nomeLista = 'codigos_lidos_' + dataHoje;
+        
+        // Carrega os códigos que já foram lidos hoje (ou cria uma lista vazia)
+        let codigosLidosHoje = JSON.parse(localStorage.getItem(nomeLista)) || [];
+
+        // --- SISTEMA DE ÁUDIO ---
+        // Bipe de sucesso (Agudo e rápido)
+        function tocarBipSucesso() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
-
                 oscillator.type = 'square'; 
                 oscillator.frequency.value = 800; 
-                
                 gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
                 gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
-
                 oscillator.start(audioCtx.currentTime);
                 oscillator.stop(audioCtx.currentTime + 0.15);
-            } catch (e) {
-                console.log("Erro ao reproduzir o bip:", e);
-            }
+            } catch (e) {}
         }
 
+        // Bipe de erro (Grave e mais longo)
+        function tocarBipErro() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sawtooth'; 
+                oscillator.frequency.value = 300; 
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {}
+        }
+
+        // --- LÓGICA DO SCANNER ---
         let ultimoLido = "";
 
         function onScanSuccess(decodedText, decodedResult) {
-            if (decodedText !== ultimoLido) {
-                ultimoLido = decodedText;
+            // Trava rápida para a câmera não tentar ler o mesmo QR Code 50 vezes por segundo
+            if (decodedText === ultimoLido) return;
+            ultimoLido = decodedText;
+            setTimeout(() => { ultimoLido = ""; }, 2000); 
+            
+            let caixaResultado = document.getElementById('resultado');
+            caixaResultado.style.display = "block";
+
+            // Verifica se a matrícula já está na lista de hoje
+            if (codigosLidosHoje.includes(decodedText)) {
                 
-                tocarBip();
+                tocarBipErro();
+                caixaResultado.className = "erro";
+                caixaResultado.innerText = "⚠️ Esse código já foi lido hoje! \n (" + decodedText + ")";
                 
-                // Exibe a caixa de resultado que estava invisível
-                let caixaResultado = document.getElementById('resultado');
-                caixaResultado.style.display = "block";
-                caixaResultado.innerText = "Lido: " + decodedText;
+            } else {
                 
-                setTimeout(() => { ultimoLido = ""; }, 2000);
+                // Se é um aluno novo, salva na memória do celular
+                codigosLidosHoje.push(decodedText);
+                localStorage.setItem(nomeLista, JSON.stringify(codigosLidosHoje));
+
+                tocarBipSucesso();
+                caixaResultado.className = "sucesso";
+                caixaResultado.innerText = "✅ Lido com sucesso: \n" + decodedText;
+                
+                // Futuramente: Código para enviar ao Google Apps Script entrará aqui!
             }
         }
 
@@ -148,7 +179,6 @@
             // Ignorado
         }
 
-        // Configurações do Scanner
         let html5QrcodeScanner = new Html5QrcodeScanner(
             "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
         
