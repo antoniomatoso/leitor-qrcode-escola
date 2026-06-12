@@ -215,6 +215,20 @@
         const URL_SISTEMA = "https://script.google.com/macros/s/AKfycby5AmiZGU3_5CpXZakNGBLTvroEaZUSgtbmkssJa37C7GqB7AASZ3zXloUKb_JSW2rZgQ/exec";
         // ==========================================
 
+        // --- NOVO: IDENTIFICAÇÃO DO OPERADOR ---
+    const parametrosUrl = new URLSearchParams(window.location.search);
+    const idOperador = parametrosUrl.get('op'); // Captura o "?op=xxx" do link
+
+    // Dicionário da sua equipe (adicione ou altere conforme necessário)
+    const listaOperadores = {
+    'matoso': 'Cap Matoso',
+    'sedinaldo': 'Sd Sedinaldo',
+    'donda': 'Cb Donda',
+    'brito': 'SO Brito'
+};
+
+// Define o nome do responsável baseado no link. Se abrir sem link, fica "Não Identificado"
+const nomeResponsavel = listaOperadores[idOperador] || 'Não Identificado';
         const dataHoje = new Date().toLocaleDateString('pt-BR');
         const nomeLista = 'codigos_lidos_' + dataHoje;
         let codigosLidosHoje = JSON.parse(localStorage.getItem(nomeLista)) || [];
