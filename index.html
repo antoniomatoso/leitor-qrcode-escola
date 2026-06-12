@@ -16,37 +16,18 @@
             background-color: #f0f2f5; 
             margin: 0;
         }
-        h2 { color: #333; margin-bottom: 15px; font-size: 24px; }
+        h2 { color: #333; margin-bottom: 5px; font-size: 24px; }
         
-        /* --- SISTEMA DE ABAS --- */
-        .tabs-container {
-            display: flex;
-            max-width: 500px;
-            margin: 0 auto 15px auto;
-            background: #e4e6eb;
-            border-radius: 8px;
-            padding: 4px;
-        }
-        .tab-button {
-            flex: 1;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            background: none;
-            color: #555;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-        .tab-button.active {
-            background: white;
+        /* --- INDICADOR DE OPERADOR --- */
+        #info-operador {
+            margin-bottom: 20px; 
+            font-size: 16px; 
+            font-weight: bold; 
             color: #0056b3;
-            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
         }
 
         /* --- CONTAINERS PRINCIPAIS --- */
-        #scanner-container, #manual-container {
+        #scanner-container {
             width: 100%;
             max-width: 500px;
             margin: 0 auto;
@@ -57,7 +38,7 @@
             width: 100%;
         }
 
-        #reader, .manual-card { 
+        #reader { 
             width: 100%; 
             border: none !important; 
             background: white;
@@ -65,37 +46,6 @@
             border-radius: 12px;
             box-shadow: 0px 4px 10px rgba(0,0,0,0.1); 
             box-sizing: border-box;
-        }
-
-        /* --- FORMULÁRIO MANUAL --- */
-        .form-group {
-            text-align: left;
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #444;
-        }
-        .form-control {
-            width: 100%;
-            padding: 14px;
-            font-size: 16px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            background: #f8f9fa;
-        }
-        .form-control:focus {
-            border-color: #0056b3;
-            outline: none;
-            background: white;
-        }
-
-        .btn-enviar {
-            background-color: #28a745 !important; 
-            box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3) !important;
         }
 
         /* --- MENSAGEM SOBREPOSTA NO VÍDEO --- */
@@ -129,7 +79,7 @@
         }
 
         /* --- CUSTOMIZAÇÃO DOS BOTÕES DA BIBLIOTECA --- */
-        #reader button, .btn-geral {
+        #reader button {
             background-color: #0056b3; 
             color: white;
             border: none;
@@ -145,7 +95,7 @@
             text-transform: uppercase;
         }
 
-        #reader button:active, .btn-geral:active { transform: scale(0.98); }
+        #reader button:active { transform: scale(0.98); }
 
         #reader select {
             width: 100%;
@@ -175,29 +125,11 @@
 <body>
 
     <h2>Controle de Entrada</h2>
+    <div id="info-operador">Operador(a): Carregando...</div>
     
-    <div class="tabs-container">
-        <button class="tab-button active" onclick="mudarModo('camera')">📷 QR Code</button>
-        <button class="tab-button" onclick="mudarModo('manual')">✍️ Manual</button>
-    </div>
-
     <div id="scanner-container">
         <div id="scanner-wrapper">
             <div id="reader"></div>
-        </div>
-    </div>
-
-    <div id="manual-container" style="display: none;">
-        <div class="manual-card">
-            <div class="form-group">
-                <label for="txt-turma">Turma / Ano:</label>
-                <input type="text" id="txt-turma" class="form-control" placeholder="Ex: 7º Ano A, 1º EM">
-            </div>
-            <div class="form-group">
-                <label for="txt-aluno">Nome do Aluno:</label>
-                <input type="text" id="txt-aluno" class="form-control" placeholder="Digite o nome completo">
-            </div>
-            <button class="btn-geral btn-enviar" onclick="processarRegistroManual()">Registrar Entrada</button>
         </div>
     </div>
 
@@ -215,47 +147,27 @@
         const URL_SISTEMA = "https://script.google.com/macros/s/AKfycby5AmiZGU3_5CpXZakNGBLTvroEaZUSgtbmkssJa37C7GqB7AASZ3zXloUKb_JSW2rZgQ/exec";
         // ==========================================
 
-        // --- NOVO: IDENTIFICAÇÃO DO OPERADOR ---
-    const parametrosUrl = new URLSearchParams(window.location.search);
-    const idOperador = parametrosUrl.get('op'); // Captura o "?op=xxx" do link
+        // --- RASTREAMENTO E MAPEAMENTO DO OPERADOR ---
+        const parametrosUrl = new URLSearchParams(window.location.search);
+        const idOperador = parametrosUrl.get('op');
 
-    // Dicionário da sua equipe (adicione ou altere conforme necessário)
-    const listaOperadores = {
-    'matoso': 'Cap Matoso',
-    'sedinaldo': 'Sd Sedinaldo',
-    'donda': 'Cb Donda',
-    'brito': 'SO Brito'
-};
+        const listaOperadores = {
+            'matoso': 'Cap Matoso',
+            'sedinaldo': 'Sd Sedinaldo',
+            'donda': 'Cb Donda',
+            'brito': 'SO Brito'
+        };
 
-// Define o nome do responsável baseado no link. Se abrir sem link, fica "Não Identificado"
-const nomeResponsavel = listaOperadores[idOperador] || 'Não Identificado';
+        const nomeResponsavel = listaOperadores[idOperador] || 'Não Identificado';
+
+        // Atualiza o texto na tela assim que o documento carregar
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('info-operador').innerText = "Operador(a): " + nomeResponsavel;
+        });
+
         const dataHoje = new Date().toLocaleDateString('pt-BR');
         const nomeLista = 'codigos_lidos_' + dataHoje;
         let codigosLidosHoje = JSON.parse(localStorage.getItem(nomeLista)) || [];
-
-        // Controle de alternar telas (Camera/Manual)
-        function mudarModo(modo) {
-            const btnCam = document.querySelectorAll('.tab-button')[0];
-            const btnMan = document.querySelectorAll('.tab-button')[1];
-            const divCam = document.getElementById('scanner-container');
-            const divMan = document.getElementById('manual-container');
-            const overlayTexto = document.getElementById('overlay-text');
-            
-            overlayTexto.style.display = "none"; 
-
-            if(modo === 'camera') {
-                btnCam.classList.add('active');
-                btnMan.classList.remove('active');
-                divCam.style.display = 'block';
-                divMan.style.display = 'none';
-            } else {
-                btnCam.classList.remove('active');
-                btnMan.classList.add('active');
-                divCam.style.display = 'none';
-                divMan.style.display = 'block';
-                document.getElementById('manual-container').appendChild(overlayTexto);
-            }
-        }
 
         // Sistema de Áudio
         function tocarBipSucesso() {
@@ -303,12 +215,9 @@ const nomeResponsavel = listaOperadores[idOperador] || 'Não Identificado';
         let timerEsconderTexto;
 
         // Função Central de Lógica de Registro
-        function executarFluxoRegistro(textoIdentificador, obterPorCamera) {
+        function executarFluxoRegistro(textoIdentificador) {
             let overlayTexto = document.getElementById('overlay-text');
-            
-            if(obterPorCamera) {
-                document.getElementById('scanner-wrapper').appendChild(overlayTexto);
-            }
+            document.getElementById('scanner-wrapper').appendChild(overlayTexto);
             
             overlayTexto.style.display = "block"; 
             clearTimeout(timerEsconderTexto); 
@@ -326,15 +235,15 @@ const nomeResponsavel = listaOperadores[idOperador] || 'Não Identificado';
                 tocarBipSucesso();
                 overlayTexto.className = "sucesso-overlay";
                 overlayTexto.style.fontSize = textoIdentificador.length > 15 ? "1.5em" : "2.5em";
-                overlayTexto.innerText = obterPorCamera ? textoIdentificador : "✅ Entrada Registrada!";
+                overlayTexto.innerText = textoIdentificador;
 
-                // Disparo para o Google Planilhas (CORRIGIDO)
+                // Disparo para o Google Planilhas enviando Código + Operador
                 if (URL_SISTEMA) {
                     fetch(URL_SISTEMA, {
                         method: "POST",
                         mode: "no-cors",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: "codigo=" + encodeURIComponent(textoIdentificador)
+                        body: "codigo=" + encodeURIComponent(textoIdentificador) + "&responsavel=" + encodeURIComponent(nomeResponsavel)
                     }).catch(err => console.log("Erro ao enviar dados:", err));
                 }
             }
@@ -349,27 +258,7 @@ const nomeResponsavel = listaOperadores[idOperador] || 'Não Identificado';
         function onScanSuccess(decodedText, decodedResult) {
             if (decodedText === ultimoLido) return;
             ultimoLido = decodedText;
-            executarFluxoRegistro(decodedText, true);
-        }
-
-        // Leitura Manual
-        function processarRegistroManual() {
-            let campoTurma = document.getElementById('txt-turma');
-            let campoAluno = document.getElementById('txt-aluno');
-            
-            let turma = campoTurma.value.trim();
-            let aluno = campoAluno.value.trim();
-            
-            if (!turma || !aluno) {
-                alert("Por favor, preencha a turma e o nome do aluno!");
-                return;
-            }
-            
-            let identificadorManual = turma + " - " + aluno;
-            executarFluxoRegistro(identificadorManual, false);
-            
-            campoAluno.value = "";
-            campoAluno.focus();
+            executarFluxoRegistro(decodedText);
         }
 
         function onScanFailure(error) { }
