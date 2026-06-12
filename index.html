@@ -233,4 +233,138 @@
                 btnCam.classList.add('active');
                 btnMan.classList.remove('active');
                 divCam.style.display = 'block';
-                divMan.style.display = '
+                divMan.style.display = 'none';
+            } else {
+                btnCam.classList.remove('active');
+                btnMan.classList.add('active');
+                divCam.style.display = 'none';
+                divMan.style.display = 'block';
+                document.getElementById('manual-container').appendChild(overlayTexto);
+            }
+        }
+
+        // Sistema de Áudio
+        function tocarBipSucesso() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'square'; 
+                oscillator.frequency.value = 800; 
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {}
+        }
+
+        function tocarBipErro() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sawtooth'; 
+                oscillator.frequency.value = 300; 
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {}
+        }
+
+        // Limpar Trava Diária
+        function limparMemoriaHoje() {
+            if(confirm("Tem certeza que deseja zerar a memória do leitor? Todos poderão passar novamente hoje.")) {
+                localStorage.removeItem(nomeLista); 
+                codigosLidosHoje = []; 
+                alert("✅ Memória zerada com sucesso!");
+            }
+        }
+
+        let ultimoLido = "";
+        let timerEsconderTexto;
+
+        // Função Central de Lógica de Registro
+        function executarFluxoRegistro(textoIdentificador, obterPorCamera) {
+            let overlayTexto = document.getElementById('overlay-text');
+            
+            if(obterPorCamera) {
+                document.getElementById('scanner-wrapper').appendChild(overlayTexto);
+            }
+            
+            overlayTexto.style.display = "block"; 
+            clearTimeout(timerEsconderTexto); 
+
+            // Checa Duplicidade
+            if (codigosLidosHoje.includes(textoIdentificador)) {
+                tocarBipErro();
+                overlayTexto.className = "erro-overlay";
+                overlayTexto.innerText = "⚠️ Esse código já foi lido hoje!\n(" + textoIdentificador + ")";
+            } else {
+                // Sucesso
+                codigosLidosHoje.push(textoIdentificador);
+                localStorage.setItem(nomeLista, JSON.stringify(codigosLidosHoje));
+
+                tocarBipSucesso();
+                overlayTexto.className = "sucesso-overlay";
+                overlayTexto.style.fontSize = textoIdentificador.length > 15 ? "1.5em" : "2.5em";
+                overlayTexto.innerText = obterPorCamera ? textoIdentificador : "✅ Entrada Registrada!";
+
+                // Disparo para o Google Planilhas (CORRIGIDO)
+                if (URL_SISTEMA) {
+                    fetch(URL_SISTEMA, {
+                        method: "POST",
+                        mode: "no-cors",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: "codigo=" + encodeURIComponent(textoIdentificador)
+                    }).catch(err => console.log("Erro ao enviar dados:", err));
+                }
+            }
+
+            timerEsconderTexto = setTimeout(() => { 
+                overlayTexto.style.display = "none";
+                ultimoLido = ""; 
+            }, 2500);
+        }
+
+        // Leitura Câmera
+        function onScanSuccess(decodedText, decodedResult) {
+            if (decodedText === ultimoLido) return;
+            ultimoLido = decodedText;
+            executarFluxoRegistro(decodedText, true);
+        }
+
+        // Leitura Manual
+        function processarRegistroManual() {
+            let campoTurma = document.getElementById('txt-turma');
+            let campoAluno = document.getElementById('txt-aluno');
+            
+            let turma = campoTurma.value.trim();
+            let aluno = campoAluno.value.trim();
+            
+            if (!turma || !aluno) {
+                alert("Por favor, preencha a turma e o nome do aluno!");
+                return;
+            }
+            
+            let identificadorManual = turma + " - " + aluno;
+            executarFluxoRegistro(identificadorManual, false);
+            
+            campoAluno.value = "";
+            campoAluno.focus();
+        }
+
+        function onScanFailure(error) { }
+
+        // Inicializa o Leitor
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
+        
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    </script>
+</body>
+</html>
