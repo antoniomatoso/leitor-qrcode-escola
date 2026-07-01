@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitor de Entrada Seguro</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <title>Leitor de Entrada</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     
@@ -21,48 +18,7 @@
         }
         h2 { color: #333; margin-bottom: 5px; font-size: 24px; }
         
-        /* --- TELA DE LOGIN --- */
-        #login-container {
-            max-width: 400px;
-            margin: 50px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-        }
-        #login-container input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        #btn-login {
-            background-color: #0056b3; 
-            color: white;
-            border: none;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            width: 100%; 
-            margin-top: 15px;
-            cursor: pointer;
-        }
-        #erro-login {
-            color: #dc3545;
-            margin-top: 10px;
-            display: none;
-            font-weight: bold;
-        }
-
-        /* --- APP PRINCIPAL (Oculto até logar) --- */
-        #app-container {
-            display: none;
-        }
-
+        /* --- INDICADOR DE OPERADOR --- */
         #info-operador {
             margin-bottom: 20px; 
             font-size: 16px; 
@@ -70,6 +26,7 @@
             color: #0056b3;
         }
 
+        /* --- CONTAINERS PRINCIPAIS --- */
         #scanner-container {
             width: 100%;
             max-width: 500px;
@@ -91,6 +48,7 @@
             box-sizing: border-box;
         }
 
+        /* --- MENSAGEM SOBREPOSTA NO VÍDEO --- */
         #overlay-text {
             position: absolute;
             top: 40%; 
@@ -120,148 +78,111 @@
             text-shadow: none;
         }
 
-        /* Customização Botões do Leitor */
+        /* --- CUSTOMIZAÇÃO DOS BOTÕES DA BIBLIOTECA --- */
         #reader button {
             background-color: #0056b3; 
-            color: white; border: none; padding: 15px;
-            font-size: 16px; font-weight: bold; border-radius: 8px;
-            width: 100%; margin-top: 10px; cursor: pointer;
-        }
-        #reader select {
-            width: 100%; padding: 12px; font-size: 16px;
-            border: 2px solid #ccc; border-radius: 8px; margin-bottom: 10px;
-        }
-        
-        #btn-logout {
-            background-color: transparent;
-            color: #555;
-            border: 1px solid #555;
-            padding: 8px 15px;
-            border-radius: 5px;
+            color: white;
+            border: none;
+            padding: 18px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            width: 100%; 
+            margin-top: 15px;
+            margin-bottom: 10px;
             cursor: pointer;
-            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 86, 179, 0.3);
+            text-transform: uppercase;
+        }
+
+        #reader button:active { transform: scale(0.98); }
+
+        #reader select {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            appearance: auto; 
+        }
+
+        #reader a {
+            display: block;
+            padding: 15px 10px;
+            font-size: 16px;
+            color: #555;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: #f8f9fa;
         }
     </style>
 </head>
 <body>
 
     <h2>Controle de Entrada</h2>
-
-    <div id="login-container">
-        <h3>Acesso Restrito</h3>
-        <input type="email" id="email" placeholder="E-mail do Operador">
-        <input type="password" id="senha" placeholder="Senha">
-        <button id="btn-login" onclick="fazerLogin()">Entrar</button>
-        <div id="erro-login">E-mail ou senha incorretos.</div>
+    <div id="info-operador">Operador(a): Carregando...</div>
+    
+    <div id="scanner-container">
+        <div id="scanner-wrapper">
+            <div id="reader"></div>
+        </div>
     </div>
 
-    <div id="app-container">
-        <div id="info-operador">Operador(a): Carregando...</div>
-        
-        <div id="scanner-container">
-            <div id="scanner-wrapper">
-                <div id="reader"></div>
-            </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
-            <button onclick="limparMemoriaHoje()" style="background-color: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 5px; font-size: 14px; cursor: pointer; margin-right: 10px;">
-                🗑️ Zerar Memória de Hoje
-            </button>
-            <button id="btn-logout" onclick="fazerLogout()">Sair (Logout)</button>
-        </div>
-
-        <div id="overlay-text"></div>
+    <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
+        <button onclick="limparMemoriaHoje()" style="background-color: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 5px; font-size: 14px; cursor: pointer;">
+            🗑️ Zerar Memória de Hoje
+        </button>
     </div>
+
+    <div id="overlay-text"></div>
 
     <script>
         // ==========================================
-        // 1. COLE AQUI AS CHAVES DO SEU FIREBASE
-        // ==========================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyBfteUpMMz4oHpfo-UbaaNNFbpC77y4FLY",
-  authDomain: "controle-de-entrada-a1135.firebaseapp.com",
-  projectId: "controle-de-entrada-a1135",
-  storageBucket: "controle-de-entrada-a1135.firebasestorage.app",
-  messagingSenderId: "122523138084",
-  appId: "1:122523138084:web:ad772e954701b217cc40b1"
-        };
-        
-        // Inicializa o Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-
-        // ==========================================
-        // 2. VARIÁVEIS GERAIS DO SISTEMA
-        // ==========================================
+        // ATENÇÃO: COLE A URL DA SUA PLANILHA (APPS SCRIPT) AQUI:
         const URL_SISTEMA = "https://script.google.com/macros/s/AKfycby5AmiZGU3_5CpXZakNGBLTvroEaZUSgtbmkssJa37C7GqB7AASZ3zXloUKb_JSW2rZgQ/exec";
-        let nomeResponsavel = "Não Identificado"; 
-        
+        // ==========================================
+
+        // --- RASTREAMENTO E MAPEAMENTO DO OPERADOR ---
+        const parametrosUrl = new URLSearchParams(window.location.search);
+        const idOperador = parametrosUrl.get('op');
+
+        const listaOperadores = {
+            'matoso': 'Cap Matoso',
+            'sedinaldo': 'Sd Sedinaldo',
+            'donda': 'Cb Donda',
+            'brito': 'SO Brito'
+        };
+
+        const nomeResponsavel = listaOperadores[idOperador] || 'Não Identificado';
+
+        // Atualiza o texto na tela assim que o documento carregar
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('info-operador').innerText = "Operador(a): " + nomeResponsavel;
+        });
+
         const dataHoje = new Date().toLocaleDateString('pt-BR');
         const nomeLista = 'codigos_lidos_' + dataHoje;
         let codigosLidosHoje = JSON.parse(localStorage.getItem(nomeLista)) || [];
-        let html5QrcodeScanner;
 
-        // ==========================================
-        // 3. LÓGICA DE AUTENTICAÇÃO (LOGIN / LOGOUT)
-        // ==========================================
-        
-        // Fica escutando para ver se o usuário está logado ou não
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                // Usuário Logado: Esconde login, mostra app
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
-                
-                // Pega o email (antes do @) para usar como nome do responsável
-                nomeResponsavel = user.email.split('@')[0].toUpperCase();
-                document.getElementById('info-operador').innerText = "Operador(a): " + nomeResponsavel;
-                
-                // Inicia a câmera apenas depois que logar
-                iniciarCamera();
-            } else {
-                // Usuário Não Logado: Mostra login, esconde app
-                document.getElementById('login-container').style.display = 'block';
-                document.getElementById('app-container').style.display = 'none';
-                
-                // Para a câmera se deslogar
-                if(html5QrcodeScanner) {
-                    html5QrcodeScanner.clear();
-                }
-            }
-        });
-
-        function fazerLogin() {
-            const email = document.getElementById('email').value;
-            const senha = document.getElementById('senha').value;
-            const msgErro = document.getElementById('erro-login');
-            
-            msgErro.style.display = 'none';
-            
-            auth.signInWithEmailAndPassword(email, senha)
-                .catch(error => {
-                    msgErro.style.display = 'block';
-                    msgErro.innerText = "Erro: Verifique e-mail e senha.";
-                });
-        }
-
-        function fazerLogout() {
-            auth.signOut();
-        }
-
-        // ==========================================
-        // 4. LÓGICA DE LEITURA E ÁUDIO (Mantido do original)
-        // ==========================================
+        // Sistema de Áudio
         function tocarBipSucesso() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
-                oscillator.type = 'square'; oscillator.frequency.value = 800; 
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'square'; 
+                oscillator.frequency.value = 800; 
                 gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
                 gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
-                oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.15);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.15);
             } catch (e) {}
         }
 
@@ -270,16 +191,20 @@
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
-                oscillator.type = 'sawtooth'; oscillator.frequency.value = 300; 
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sawtooth'; 
+                oscillator.frequency.value = 300; 
                 gainNode.gain.setValueAtTime(1, audioCtx.currentTime); 
                 gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
-                oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.3);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
             } catch (e) {}
         }
 
+        // Limpar Trava Diária
         function limparMemoriaHoje() {
-            if(confirm("Tem certeza que deseja zerar a memória do leitor?")) {
+            if(confirm("Tem certeza que deseja zerar a memória do leitor? Todos poderão passar novamente hoje.")) {
                 localStorage.removeItem(nomeLista); 
                 codigosLidosHoje = []; 
                 alert("✅ Memória zerada com sucesso!");
@@ -289,6 +214,7 @@
         let ultimoLido = "";
         let timerEsconderTexto;
 
+        // Função Central de Lógica de Registro
         function executarFluxoRegistro(textoIdentificador) {
             let overlayTexto = document.getElementById('overlay-text');
             document.getElementById('scanner-wrapper').appendChild(overlayTexto);
@@ -296,11 +222,13 @@
             overlayTexto.style.display = "block"; 
             clearTimeout(timerEsconderTexto); 
 
+            // Checa Duplicidade
             if (codigosLidosHoje.includes(textoIdentificador)) {
                 tocarBipErro();
                 overlayTexto.className = "erro-overlay";
-                overlayTexto.innerText = "⚠️ Código já lido!\n(" + textoIdentificador + ")";
+                overlayTexto.innerText = "⚠️ Esse código já foi lido hoje!\n(" + textoIdentificador + ")";
             } else {
+                // Sucesso
                 codigosLidosHoje.push(textoIdentificador);
                 localStorage.setItem(nomeLista, JSON.stringify(codigosLidosHoje));
 
@@ -309,9 +237,11 @@
                 overlayTexto.style.fontSize = textoIdentificador.length > 15 ? "1.5em" : "2.5em";
                 overlayTexto.innerText = textoIdentificador;
 
+                // Disparo para o Google Planilhas enviando Código + Operador
                 if (URL_SISTEMA) {
                     fetch(URL_SISTEMA, {
-                        method: "POST", mode: "no-cors",
+                        method: "POST",
+                        mode: "no-cors",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                         body: "codigo=" + encodeURIComponent(textoIdentificador) + "&responsavel=" + encodeURIComponent(nomeResponsavel)
                     }).catch(err => console.log("Erro ao enviar dados:", err));
@@ -324,18 +254,20 @@
             }, 2500);
         }
 
-        function iniciarCamera() {
-            if(!html5QrcodeScanner) {
-                html5QrcodeScanner = new Html5QrcodeScanner(
-                    "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
-                
-                html5QrcodeScanner.render((decodedText) => {
-                    if (decodedText === ultimoLido) return;
-                    ultimoLido = decodedText;
-                    executarFluxoRegistro(decodedText);
-                }, (error) => {});
-            }
+        // Leitura Câmera
+        function onScanSuccess(decodedText, decodedResult) {
+            if (decodedText === ultimoLido) return;
+            ultimoLido = decodedText;
+            executarFluxoRegistro(decodedText);
         }
+
+        function onScanFailure(error) { }
+
+        // Inicializa o Leitor
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: { width: 250, height: 250 } });
+        
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     </script>
 </body>
 </html>
